@@ -5,13 +5,19 @@ import (
 	// "bufio"
 	// "bytes"
 	// "encoding/json"
-	// "fmt"
+	"fmt"
 	// "io/ioutil"
 	// "net/http"
-	// "os"
+	"os"
 	// "time"
 )
 
 func main() {
-	client.NewClient()
+	apiClient, err := client.NewClient()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	
+	apiClient.TagUrl("https://c3.staticflickr.com/6/5615/15629176482_0384ab8a9f_o.jpg")
 }

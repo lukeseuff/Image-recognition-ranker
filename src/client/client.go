@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 )
 
-const config = "../config/config.json"
+const config = "config/config.json"
 
 // Client contains api key
 type Client struct {
