@@ -3,7 +3,6 @@ package client
 // TODO: remove
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"encoding/json"
 	"io/ioutil"
@@ -26,19 +25,22 @@ type GeneralRequest struct {
 }
 
 type Tag struct {
-	// TODO: fill out
+	Concept     string
+	Probability float64
 }
 
 type TaggedImage struct {
-	// TODO: fill out
+	URL  string
+	Tags []Tag
 }
 
-const predictUrl string = "https://api.clarifai.com/v2/models/aaa03c23b3724a16a56b629203edc62c/versions/aa7f35c01e0642fda5cf400f543e7c40/outputs"
+const predictURL string = "https://api.clarifai.com/v2/models/aaa03c23b3724a16a56b629203edc62c/versions/aa7f35c01e0642fda5cf400f543e7c40/outputs"
 
-func (c Client) TagUrls(urls []string) error /* map[string]interface{} */ {
+func (c Client) TagURLs(urls []string) ([]TaggedImage, error) {
 	var reqBody GeneralRequest
 	urlCount := len(urls)
 	inputs := make([]Inputs, urlCount)
+	taggedImages := make([]TaggedImage, urlCount)
 	
 	for i, url := range urls {
 		inputs[i] = Inputs{ ImageData{ Image{ URL: url } } }
@@ -48,13 +50,13 @@ func (c Client) TagUrls(urls []string) error /* map[string]interface{} */ {
 	jsonBody, err := json.Marshal(reqBody)
 
 	if err != nil {
-		return err
+		return taggedImages, err
 	}
 	
-	req, err := http.NewRequest("POST", predictUrl, bytes.NewReader(jsonBody))
+	req, err := http.NewRequest("POST", predictURL, bytes.NewReader(jsonBody))
 
 	if err != nil {
-		return err
+		return taggedImages, err
 	}
 	
 	req.Header.Set("Authorization", "Key " + c.APIKey)
@@ -63,31 +65,37 @@ func (c Client) TagUrls(urls []string) error /* map[string]interface{} */ {
 	res, err := client.Do(req)
 
 	if err != nil {
-		return err
+		return taggedImages, err
 	}
 
 	defer res.Body.Close()
 	resBody, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
-		return err
+		return taggedImages, err
 	}
 
 	var jsonResponse map[string]interface{}
 	err = json.Unmarshal(resBody, &jsonResponse)
 
 	if err != nil {
-		return err
+		return taggedImages, err
 	}
 
 	images := jsonResponse["outputs"].([]interface{})
-	for _, image := range images {
+	for imageIndex, image := range images {
+		var taggedImage TaggedImage
+		imageURL := image.(map[string]interface{})["input"].(map[string]interface{})["data"].(map[string]interface{})["image"].(map[string]interface{})["url"].(string)
 		predictions := image.(map[string]interface{})["data"].(map[string]interface{})["concepts"].([]interface{})
+		taggedImage.URL = imageURL
 		for _, prediction := range predictions {
 			p := prediction.(map[string]interface{})
-			fmt.Println(p["id"], p["name"])
+			tag := Tag{ Concept: p["name"].(string), Probability: p["value"].(float64) }
+			// TODO: allocate size upfront
+			taggedImage.Tags = append(taggedImage.Tags, tag)
 		}
+		taggedImages[imageIndex] = taggedImage
 	}
 
-	return nil
+	return taggedImages, nil
 }

@@ -12,7 +12,7 @@ import (
 	// "time"
 )
 
-func getUrls() []string {
+func getURLs() []string {
 	var urls []string
 	file, err := os.Open("data/images.txt")
 	
@@ -43,7 +43,8 @@ func main() {
 		os.Exit(1)
 	}
 	
-	// apiClient.TagUrl("https://c3.staticflickr.com/6/5615/15629176482_0384ab8a9f_o.jpg")
+	// apiClient.TagURL("https://c3.staticflickr.com/6/5615/15629176482_0384ab8a9f_o.jpg")
 
-	apiClient.TagUrls(getUrls()[:2])
+	taggedImages, err := apiClient.TagURLs(getURLs()[:1])
+	fmt.Printf("%v\n", taggedImages)
 }
