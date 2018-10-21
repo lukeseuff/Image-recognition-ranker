@@ -37,9 +37,10 @@ type Concept struct {
 
 type ConceptHeap []Concept
 
-func (h ConceptHeap) Len()          int  { return len(h) }
-func (h ConceptHeap) Less(i, j int) bool { return h[i].Image.Concept[h[i].Name] < h[j].Image.Concept[h[j].Name] }
-func (h ConceptHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h ConceptHeap) Len()          int     { return len(h) }
+func (h ConceptHeap) Less(i, j int) bool    { return h[i].Image.Concept[h[i].Name] < h[j].Image.Concept[h[j].Name] }
+func (h ConceptHeap) Swap(i, j int)         { h[i], h[j] = h[j], h[i] }
+func (h ConceptHeap) Peek()         float64 { return h[0].Image.Concept[h[0].Name] }
 
 func (h *ConceptHeap) Push(x interface{}) {
 	*h = append(*h, x.(Concept))
@@ -115,7 +116,12 @@ func (c Client) TagURLs(urls []string) ([]TaggedImage, map[string]*ConceptHeap, 
 		
 			conceptList, ok := concepts[p["name"].(string)]
 			if ok {
-				heap.Push(conceptList, concept)
+				if conceptList.Len() <= 10 {
+					heap.Push(conceptList, concept)
+				} else if concept.Image.Concept[concept.Name] > conceptList.Peek() {
+					conceptList.Pop()
+					heap.Push(conceptList, concept)
+				}
 			} else {
 				newConcept := &ConceptHeap{ Concept{ Name: p["name"].(string), Image: &taggedImages[imageIndex] } }
 				heap.Init(newConcept)
