@@ -44,7 +44,8 @@ func main() {
 	}
 	
 	// apiClient.TagURL("https://c3.staticflickr.com/6/5615/15629176482_0384ab8a9f_o.jpg")
-
-	taggedImages, err := apiClient.TagURLs(getURLs()[:1])
-	fmt.Printf("%v\n", taggedImages)
+	// taggedImages, err := apiClient.TagURLs(getURLs()[:10])
+	taggedImages, concepts, err := apiClient.TagURLs([]string{"https://farm5.staticflickr.com/2488/4156338171_54a1df1fde_o.jpg", "https://farm8.staticflickr.com/1379/1167031640_c295382ea4_o.jpg", "https://c6.staticflickr.com/1/104/303217440_f595f9b310_o.jpg"})
+	fmt.Printf("%v\n\n", taggedImages)
+	fmt.Printf("%v\n", concepts)
 }
