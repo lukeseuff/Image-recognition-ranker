@@ -69,5 +69,8 @@ func main() {
 		"https://farm5.staticflickr.com/4088/5015123851_1b95877fd0_o.jpg",
 	})
 
-	
+	fmt.Printf("%v\n\n", taggedImages)
+	for _, concept := range concepts["car"] {
+		fmt.Printf("%v - %v\n", concept.Image.Concept["car"], concept.Image.URL)
+	}
 }
