@@ -49,9 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 	
-	taggedImages, concepts, err := apiClient.TagURLs(getURLs()[0:256])
-
-	fmt.Printf("%v\n\n", taggedImages)
+	concepts, err := apiClient.TagURLs(getURLs()[0:10])
 
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {

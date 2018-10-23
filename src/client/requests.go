@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"io/ioutil"
+	"fmt"
 )
 
 type Image struct {
@@ -28,7 +29,7 @@ const predictURL string = "https://api.clarifai.com/v2/models/aaa03c23b3724a16a5
 func (c Client) RequestPrediction(urls []string) (map[string]interface{}, error) {
 	var body InputRequest
 	var jsonRes map[string]interface{}
-	
+	fmt.Printf("%v - %v\n", urls, len(urls))
 	inputs := make([]Inputs, len(urls))
 
 	for i, url := range urls {
