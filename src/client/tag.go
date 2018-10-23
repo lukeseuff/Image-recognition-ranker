@@ -53,47 +53,66 @@ func min(a, b int) int {
     return b
 }
 
-func (c Client) TagURLs(urls []string) (map[string][]Concept, error) {	
+func insertRanks(image *TaggedImage, predictions []interface{}, ranks map[string]*ConceptHeap) {
+	for _, prediction := range predictions {
+		p := prediction.(map[string]interface{})
+		concept := Concept {
+			Name: p["name"].(string),
+			Image: image,
+		}
+		image.Concept[concept.Name] = p["value"].(float64)
+
+		conceptList, ok := ranks[p["name"].(string)]
+
+		if ok {
+			if conceptList.Len() < 10 {
+				heap.Push(conceptList, concept)
+			} else if concept.GetValue() > conceptList.Peek() {
+				heap.Pop(conceptList)
+				heap.Push(conceptList, concept)
+			}
+		} else {
+			newConcept := &ConceptHeap{ Concept{ Name: p["name"].(string), Image: image } }
+			heap.Init(newConcept)
+			ranks[p["name"].(string)] = newConcept
+		}
+	}
+}
+
+func processImages(ranks map[string]*ConceptHeap, images []interface{}) {
+	for _, image := range images {
+		imageURL := image.(map[string]interface{})["input"].(map[string]interface{})["data"].(map[string]interface{})["image"].(map[string]interface{})["url"].(string)
+		predictions := image.(map[string]interface{})["data"].(map[string]interface{})["concepts"].([]interface{})
+		taggedImage := TaggedImage {
+			URL: imageURL,
+			Concept: make(map[string]float64),
+		}
+
+		insertRanks(&taggedImage, predictions, ranks)
+	}
+}
+
+func (c Client) RankInputs(urls []string) (map[string][]Concept, error) {
 	conceptValues := make(map[string][]Concept)
-	concepts := make(map[string]*ConceptHeap)
+	ranks := make(map[string]*ConceptHeap)
 	urlCount := len(urls)
 
 	batches := (len(urls) - 1)/128 + 1
-	
+
 	for batch := 0; batch < batches; batch++  {
 		jsonRes, err := c.RequestPrediction(urls[batch*128 : min((batch + 1)*128, urlCount)])
+
 		if err != nil {
 			return conceptValues, err
 		}
+
 		images := jsonRes["outputs"].([]interface{})
 
-		for _, image := range images {
-			imageURL := image.(map[string]interface{})["input"].(map[string]interface{})["data"].(map[string]interface{})["image"].(map[string]interface{})["url"].(string)
-			predictions := image.(map[string]interface{})["data"].(map[string]interface{})["concepts"].([]interface{})
-			taggedImage := TaggedImage{ URL: imageURL, Concept: make(map[string]float64) }
-			for _, prediction := range predictions {
-				p := prediction.(map[string]interface{})
-				concept := Concept{ Name: p["name"].(string), Image: &taggedImage }
-				taggedImage.Concept[concept.Name] = p["value"].(float64)
-				
-				conceptList, ok := concepts[p["name"].(string)]
-				if ok {
-					if conceptList.Len() < 10 {
-						heap.Push(conceptList, concept)
-					} else if concept.GetValue() > conceptList.Peek() {
-						heap.Pop(conceptList)
-						heap.Push(conceptList, concept)
-					}
-				} else {
-					newConcept := &ConceptHeap{ Concept{ Name: p["name"].(string), Image: &taggedImage } }
-					heap.Init(newConcept)
-					concepts[p["name"].(string)] = newConcept
-				}
-			}
-		}
+		processImages(ranks, images)
 	}
 
-	for concept, conceptHeap := range concepts {
+
+	for concept, conceptHeap := range ranks {
 		conceptValues[concept] = Sort(*conceptHeap)
 	}
 

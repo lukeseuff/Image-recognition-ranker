@@ -16,14 +16,14 @@ type SearchPageData struct {
 func getURLs() []string {
 	var urls []string
 	file, err := os.Open("data/images.txt")
-	
+
 	if err != nil {
 		return urls
 	}
-	
+
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
-	
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		urls = append(urls, line)
@@ -43,13 +43,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	apiClient, err := client.NewClient()
-	
+
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	
-	concepts, err := apiClient.TagURLs(getURLs()[0:10])
+
+	concepts, err := apiClient.RankInputs(getURLs()[:1])
 
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
