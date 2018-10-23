@@ -1,5 +1,5 @@
 FROM golang
-EXPOSE 80
+EXPOSE 8080
 WORKDIR /go/src/app
 COPY . /go/src/app
 CMD ["go", "run", "hello-world.go"]
