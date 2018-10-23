@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Search</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+  </head>
+
+  <body>
+    <a href="/" style="margin: 20px">back</a>
+    <form action="search" method="GET" style="margin: 20px">
+      <input type="text" name="query">
+      <input type="submit">
+    </form>
+    {{range .Concepts}}
+    <div style="margin: 20px">
+      <img src="{{.Image.URL}}" style="max-width: 200px">
+      <p>{{.Name}}</p>
+      <p>{{index .Image.Concept .Name}}</p>
+    </div>
+    {{end}}
+  </body>
+</html>

@@ -2,7 +2,6 @@ package client
 
 import (
 	"container/heap"
-	"fmt"
 )
 
 type TaggedImage struct {
@@ -30,8 +29,7 @@ func Sort(h ConceptHeap) []Concept {
 	sorted := make([]Concept, len(h))
 	length := len(h)
 	for i := 0; i < length; i++ {
-		sorted[i] = h.Pop().(Concept)
-		fmt.Printf("%v - %v\n", h, sorted[i].GetValue())
+		sorted[length - i - 1] = heap.Pop(&h).(Concept)
 	}
 	return sorted
 }
