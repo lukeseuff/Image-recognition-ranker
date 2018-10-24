@@ -12,15 +12,21 @@
   <body>
     <a href="/" style="margin: 20px">back</a>
     <form action="search" method="GET" style="margin: 20px">
-      <input type="text" name="query">
+      <input type="text" name="query" autofocus>
       <input type="submit">
     </form>
-    {{range .Concepts}}
+    {{if .Empty}}
     <div style="margin: 20px">
-      <img src="{{.Image.URL}}" style="max-width: 200px">
-      <p>{{.Name}}</p>
-      <p>{{index .Image.Concept .Name}}</p>
-    </div>
+        <p>No results</p>
+      </div>
+    {{else}}
+      {{range .Concepts}}
+      <div style="margin: 20px">
+        <img src="{{.Image.URL}}" style="max-width: 200px">
+        <p>{{.Name}}</p>
+        <p>{{index .Image.Concept .Name}}</p>
+      </div>
+      {{end}}
     {{end}}
   </body>
 </html>

@@ -11,6 +11,7 @@ import (
 
 type SearchPageData struct {
 	Concepts []client.Concept
+	Empty    bool
 }
 
 func getURLs() []string {
@@ -50,11 +51,17 @@ func main() {
 	}
 
 	concepts, err := apiClient.RankInputs(getURLs()[:1])
+	fmt.Printf("%v\n", err)
+	fmt.Printf("%v\n", concepts)
 
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query().Get("query")
-		searchPageData := SearchPageData{ Concepts: concepts[query] }
+		c, ok := concepts[query]
+		searchPageData := SearchPageData{
+			Concepts: c,
+			Empty: !ok,
+		}
 		tmpl := template.Must(template.ParseFiles("template/search.tmpl"))
 		tmpl.Execute(w, searchPageData)
 	})

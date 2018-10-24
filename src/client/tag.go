@@ -2,6 +2,7 @@ package client
 
 import (
 	"container/heap"
+	"fmt"
 )
 
 type TaggedImage struct {
@@ -17,6 +18,8 @@ type Concept struct {
 func (c Concept) GetValue() float64 {
 	return c.Image.Concept[c.Name]
 }
+
+const batchSize = 128
 
 type ConceptHeap []Concept
 
@@ -53,65 +56,91 @@ func min(a, b int) int {
     return b
 }
 
-func insertRanks(image *TaggedImage, predictions []interface{}, ranks map[string]*ConceptHeap) {
-	for _, prediction := range predictions {
-		p := prediction.(map[string]interface{})
-		concept := Concept {
-			Name: p["name"].(string),
-			Image: image,
-		}
-		image.Concept[concept.Name] = p["value"].(float64)
-
-		conceptList, ok := ranks[p["name"].(string)]
-
-		if ok {
-			if conceptList.Len() < 10 {
-				heap.Push(conceptList, concept)
-			} else if concept.GetValue() > conceptList.Peek() {
-				heap.Pop(conceptList)
-				heap.Push(conceptList, concept)
-			}
-		} else {
-			newConcept := &ConceptHeap{ Concept{ Name: p["name"].(string), Image: image } }
-			heap.Init(newConcept)
-			ranks[p["name"].(string)] = newConcept
-		}
+func addConcepts(img *TaggedImage, predictions []interface{}) {
+	for _, concept := range predictions {
+		c := concept.(map[string]interface{})
+		img.Concept[c["name"].(string)] = c["value"].(float64)
 	}
 }
 
-func processImages(ranks map[string]*ConceptHeap, images []interface{}) {
-	for _, image := range images {
-		imageURL := image.(map[string]interface{})["input"].(map[string]interface{})["data"].(map[string]interface{})["image"].(map[string]interface{})["url"].(string)
-		predictions := image.(map[string]interface{})["data"].(map[string]interface{})["concepts"].([]interface{})
+func addImages(res []interface{}) []*TaggedImage {
+	tagged := make([]*TaggedImage, 0, len(res))
+	for _, r := range res {
+		imageURL := r.(map[string]interface{})["input"].(map[string]interface{})["data"].(map[string]interface{})["image"].(map[string]interface{})["url"].(string)
+		predictions := r.(map[string]interface{})["data"].(map[string]interface{})["concepts"].([]interface{})
 		taggedImage := TaggedImage {
 			URL: imageURL,
 			Concept: make(map[string]float64),
 		}
+		tagged = append(tagged, &taggedImage)
+		addConcepts(&taggedImage, predictions)
+		fmt.Printf("%v\n", tagged)
+	}
+	return tagged
+}
 
-		insertRanks(&taggedImage, predictions, ranks)
+func (c Client) TagImages(urls []string) ([]*TaggedImage, error) {
+	tagged := make([]*TaggedImage, 0, len(urls))
+	batches := (len(urls) - 1)/batchSize + 1
+	
+	for b := 0; b < batches; b++  {
+		jsonRes, err := c.RequestPrediction(urls[b*128 : min((b + 1)*128, len(urls))])
+
+		if err != nil {
+			return tagged, err
+		}
+
+		images := jsonRes["outputs"].([]interface{})
+
+		newImages := addImages(images)
+		fmt.Printf("%v\n", newImages)
+		for _, ni := range newImages {
+			tagged = append(tagged, ni)
+		}
+	}
+	fmt.Printf("%v\n", tagged)
+	return tagged, nil
+}
+
+func insertRanks(image *TaggedImage, ranks map[string]*ConceptHeap) {
+	for name, value := range image.Concept {
+		concept := Concept {
+			Name: name,
+			Image: image,
+		}
+		
+		conceptList, ok := ranks[name]
+
+		if !ok {
+			newConcept := &ConceptHeap{ concept }
+			heap.Init(newConcept)
+			ranks[name] = newConcept
+			fmt.Printf("%v\n", ranks)
+			continue
+		}
+
+		if conceptList.Len() < 10 {
+			heap.Push(conceptList, concept)
+		} else if value > conceptList.Peek() {
+			heap.Pop(conceptList)
+			heap.Push(conceptList, concept)
+		}
 	}
 }
 
 func (c Client) RankInputs(urls []string) (map[string][]Concept, error) {
 	conceptValues := make(map[string][]Concept)
 	ranks := make(map[string]*ConceptHeap)
-	urlCount := len(urls)
+	images, err := c.TagImages(urls)
 
-	batches := (len(urls) - 1)/128 + 1
-
-	for batch := 0; batch < batches; batch++  {
-		jsonRes, err := c.RequestPrediction(urls[batch*128 : min((batch + 1)*128, urlCount)])
-
-		if err != nil {
-			return conceptValues, err
-		}
-
-		images := jsonRes["outputs"].([]interface{})
-
-		processImages(ranks, images)
+	if err != nil {
+		return conceptValues, err
 	}
 
-
+	for _, img := range images {
+		insertRanks(img, ranks)
+	}
+	
 	for concept, conceptHeap := range ranks {
 		conceptValues[concept] = Sort(*conceptHeap)
 	}
