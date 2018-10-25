@@ -1,7 +1,7 @@
 package main
 
 import (
-	"client"
+	"search"
 	"bufio"
 	"fmt"
 	"net/http"
@@ -10,7 +10,7 @@ import (
 )
 
 type SearchPageData struct {
-	Concepts []client.Concept
+	Concepts []search.Concept
 	Empty    bool
 }
 
@@ -43,16 +43,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	apiClient, err := client.NewClient()
+	apiClient, err := search.NewClient()
 
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	concepts, err := apiClient.RankInputs(getURLs()[:1])
-	fmt.Printf("%v\n", err)
-	fmt.Printf("%v\n", concepts)
+	concepts, err := apiClient.RankInputs(getURLs()[:2])
 
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {

@@ -1,9 +1,6 @@
-package client
+package search
 
-import (
-	"container/heap"
-	"fmt"
-)
+import "container/heap"
 
 type TaggedImage struct {
 	URL     string
@@ -74,7 +71,6 @@ func addImages(res []interface{}) []*TaggedImage {
 		}
 		tagged = append(tagged, &taggedImage)
 		addConcepts(&taggedImage, predictions)
-		fmt.Printf("%v\n", tagged)
 	}
 	return tagged
 }
@@ -93,12 +89,10 @@ func (c Client) TagImages(urls []string) ([]*TaggedImage, error) {
 		images := jsonRes["outputs"].([]interface{})
 
 		newImages := addImages(images)
-		fmt.Printf("%v\n", newImages)
 		for _, ni := range newImages {
 			tagged = append(tagged, ni)
 		}
 	}
-	fmt.Printf("%v\n", tagged)
 	return tagged, nil
 }
 
@@ -115,7 +109,6 @@ func insertRanks(image *TaggedImage, ranks map[string]*ConceptHeap) {
 			newConcept := &ConceptHeap{ concept }
 			heap.Init(newConcept)
 			ranks[name] = newConcept
-			fmt.Printf("%v\n", ranks)
 			continue
 		}
 
