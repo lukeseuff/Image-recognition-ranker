@@ -1,9 +1,11 @@
 # Clarifai Challenge
 
-## Run
 Can run the application directly. Will open the browser when the rankings are processed.
 
 Can run using Docker.
+
+The API key can be changed from the config file.
+
 ### Windows
 `run.bat`
 
