@@ -53,7 +53,7 @@ func search(concepts map[string][]tag.Concept) func(http.ResponseWriter, *http.R
 }
 
 func Start() {
-	urls := util.GetURLs("data/images.txt")[:100]
+	urls := util.GetURLs("data/images.txt")
 	apiClient, _ := request.NewClient()
 	responses := apiClient.BatchPrediction(urls, maxBatchSize)
 	taggedImages := tag.TagImages(responses)
