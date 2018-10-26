@@ -5,8 +5,11 @@ import (
 	"rank"
 	"util"
 	"net/http"
+	"runtime"
+	"os/exec"
 	"tag"
 	"html/template"
+	"fmt"
 )
 
 const maxBatchSize = 128
@@ -14,6 +17,21 @@ const maxBatchSize = 128
 type SearchPageData struct {
 	Concepts []tag.Concept
 	Empty    bool
+}
+
+func startBrowser(url string) bool {
+	// try to start the browser
+	var args []string
+	switch runtime.GOOS {
+	case "darwin":
+		args = []string{"open"}
+	case "windows":
+		args = []string{"cmd", "/c", "start"}
+	default:
+		args = []string{"xdg-open"}
+	}
+	cmd := exec.Command(args[0], append(args[1:], url)...)
+	return cmd.Start() == nil
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -35,12 +53,14 @@ func search(concepts map[string][]tag.Concept) func(http.ResponseWriter, *http.R
 }
 
 func Start() {
-	urls := util.GetURLs("data/images.txt")
+	urls := util.GetURLs("data/images.txt")[:100]
 	apiClient, _ := request.NewClient()
 	responses := apiClient.BatchPrediction(urls, maxBatchSize)
 	taggedImages := tag.TagImages(responses)
 	rankings := rank.RankTaggedImages(taggedImages)
 
+	startBrowser("http://localhost:8080")
+	fmt.Println("serving on localhost:8080")
 	http.HandleFunc("/", index)
 	http.HandleFunc("/search", search(rankings))
 	http.ListenAndServe(":8080", nil)
