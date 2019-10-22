@@ -1,4 +1,4 @@
-# Clarifai Challenge
+# Image recognition ranker
 
 Can run the application directly. Will open the browser when the rankings are processed.
 
